@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Data.Common;
 using System.Linq;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.OleDb;
 
 namespace Persistence
 {
@@ -13,47 +13,20 @@ namespace Persistence
             return dataTable.Rows.Count == 0 ? null : Enumerable.Select(dataTable.AsEnumerable(), row => row.ToObject<T>()).ToList();
         }
 
-        //internal static List<T> ToObjectList<T>(this DataTable dataTable, IEnumerable<string> resultMap)
-        //{
-        //    if (dataTable.Rows.Count == 0) return null;
-        //    List<T> objectList = new List<T>();
-        //    foreach (var row in dataTable.AsEnumerable())
-        //    {
-        //        var tObject = row.ToObject<T>(resultMap);
-        //        objectList.Add(tObject);
-        //    }
-        //    return objectList;
-        //}
-
         internal static List<T> ToObjectList<T>(this DataTable dataTable, ResultMap aResultMap)
         {
             return dataTable.Rows.Count == 0 ? null : Enumerable.Select(dataTable.AsEnumerable(), row => row.ToObject<T>(aResultMap)).ToList();
         }
 
         internal static T ToObject<T>(this DataRow dataRow)
-        {            
+        {
             var tObject = Activator.CreateInstance<T>();
             foreach (var prop in tObject.GetType().GetProperties().Where(prop => dataRow.Table.Columns.Contains(prop.Name) && dataRow[prop.Name] != null))
             {
                 prop.SetValue(tObject, dataRow[prop.Name], null);
             }
             return tObject;
-        }                
-
-        //internal static T ToObject<T>(this DataRow dataRow, IEnumerable<string> resultMap)
-        //{
-        //    var tObject = Activator.CreateInstance<T>();
-        //    foreach (var pair in resultMap)
-        //    {
-        //        var property = pair.Split(':')[0];
-        //        var column = pair.Split(':')[1];
-        //        if (dataRow.Table.Columns.Contains(column) && dataRow[column] != null)
-        //        {
-        //            tObject.GetType().GetProperty(property).SetValue(tObject, dataRow[column], null);
-        //        }
-        //    }            
-        //    return tObject;
-        //}
+        }
 
         internal static T ToObject<T>(this DataRow dataRow, ResultMap aResultMap)
         {
@@ -75,7 +48,7 @@ namespace Persistence
                 {
                     tObject.GetType().GetProperty(property).SetValue(tObject, dataRow[column], null);
                 }
-            }            
+            }
             return tObject;
         }
 
@@ -86,35 +59,65 @@ namespace Persistence
             {
                 var propertyToGet = _object.GetType().GetProperty(bits[i]);
                 var propertyValue = propertyToGet.GetValue(_object, null);
-                if(propertyValue == null)
+                if (propertyValue == null)
                 {
                     var newObject = Activator.CreateInstance(propertyToGet.PropertyType);
-                    propertyToGet.SetValue(_object, newObject, null);                    
+                    propertyToGet.SetValue(_object, newObject, null);
                 }
                 _object = propertyToGet.GetValue(_object, null);
             }
             var propertyToSet = _object.GetType().GetProperty(bits.Last());
-            propertyToSet.SetValue(_object, value, null);            
+            propertyToSet.SetValue(_object, value, null);
         }
     }
 
 
     internal class ResultMap
     {
-        //internal string ClassName { get; set; }
         internal string[] Properties { get; set; }
         internal string[] DatabaseColumns { get; set; }
-        //internal bool IsValid { get; set; }
-        //internal string ErrorMessage { get; set; }
     }
 
     public class SqlHandler
     {
-        readonly OleDbConnection _connection;
-
-        public SqlHandler(string connectionString)
+        readonly DbConnection _connection;
+        readonly DbDataAdapter _dbDataAdapter;
+        public SqlHandler(string provider, string connectionString)
         {
-            _connection = new OleDbConnection(connectionString);
+            _connection = CreateDbConnection(provider, connectionString);
+            _dbDataAdapter = CreateDataAdapter(provider);
+        }
+
+
+        // Given a provider name and connection string, 
+        // create the DbProviderFactory and DbConnection.
+        // Returns a DbConnection on success; null on failure.
+        private static DbConnection CreateDbConnection(string providerName, string connectionString)
+        {
+            // Assume failure.
+            DbConnection connection = null;
+
+            // Create the DbProviderFactory and DbConnection.
+            if (connectionString != null)
+            {
+                try
+                {
+                    var factory = DbProviderFactories.GetFactory(providerName);
+                    connection = factory.CreateConnection();
+                    connection.ConnectionString = connectionString;
+                }
+                catch (Exception ex)
+                {
+                    // Set the connection to null if it was created.
+                    if (connection != null)
+                    {
+                        connection = null;
+                    }
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            // Return the connection.
+            return connection;
         }
 
         void OpenConnection()
@@ -130,15 +133,22 @@ namespace Persistence
             _connection.Close();
         }
 
-        OleDbCommand CreateCommand(string query)
+        DbCommand CreateCommand(string query)
         {
-            OpenConnection();            
-            return new OleDbCommand(query, _connection);
+            OpenConnection();
+            var command = _connection.CreateCommand();
+            command.CommandText = query;
+            return command;
+        }
+
+        static DbDataAdapter CreateDataAdapter(string connection)
+        {
+            return DbProviderFactories.GetFactory(connection).CreateDataAdapter();
         }
 
         static ResultMap ValidateAndGetResultMap(string resutlMap, object _object)
-        {            
-            if(string.IsNullOrEmpty(resutlMap) || resutlMap.Trim().Length == 0)
+        {
+            if (string.IsNullOrEmpty(resutlMap) || resutlMap.Trim().Length == 0)
             {
                 throw new Exception("Invalid result map.");
             }
@@ -204,7 +214,7 @@ namespace Persistence
         {
             if (_object == null) return query;
             var propertiesInQueryString = query.Substring(query.ToLower().IndexOf("values(#", StringComparison.Ordinal) + 7, query.ToLower().IndexOf("#)", StringComparison.Ordinal) + 1 - (query.ToLower().IndexOf("values(#", StringComparison.Ordinal) + 7)).Split(',');
-            foreach(var property in propertiesInQueryString)
+            foreach (var property in propertiesInQueryString)
             {
                 if (property.Contains('.'))
                 {
@@ -215,7 +225,7 @@ namespace Persistence
                 {
                     query = query.Replace(property, "'" + _object.GetType().GetProperty(property.Replace("#", "")).GetValue(_object, null) + "'");
                 }
-            }            
+            }
             return query;
         }
 
@@ -235,7 +245,7 @@ namespace Persistence
             return query;
         }
 
-        internal int Insert(string query,object _object)
+        int Write(string query, object _object)
         {
             query = FormateQueryWithObjectValues(query, _object);
             var result = CreateCommand(query).ExecuteNonQuery();
@@ -243,12 +253,32 @@ namespace Persistence
             return result;
         }
 
-        internal int Update(string query, object _object)
+        public int Insert(string query, object _object)
         {
-            query = FormateQueryWithObjectValues(query, _object);
-            var result = CreateCommand(query).ExecuteNonQuery();
+            return Write(query, _object);
+        }
+
+        public int Update(string query, object _object)
+        {
+            return Write(query, _object);
+        }
+
+        DataTable Read(string query)
+        {
+            _dbDataAdapter.SelectCommand = CreateCommand(query);
+            var dt = new DataTable();
+            _dbDataAdapter.Fill(dt);
             CloseConnection();
-            return result;
+            return dt;
+        }
+
+        DataTable Read(string query, int startRecordIndex, int maxRecords)
+        {
+            _dbDataAdapter.SelectCommand = CreateCommand(query);
+            var dt = new DataTable();
+            _dbDataAdapter.Fill(startRecordIndex, maxRecords, dt);
+            CloseConnection();
+            return dt;
         }
 
         /// <summary>
@@ -256,14 +286,10 @@ namespace Persistence
         /// </summary>
         /// <typeparam name="T">Result object type.</typeparam>
         /// <param name="query">Query to select.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal T GetRecord<T>(string query, object _object)
+        public T GetRecord<T>(string query)
         {
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(dt);
-            CloseConnection();
+            var dt = Read(query);
             return dt.Rows.Count > 0 ? dt.Rows[0].ToObject<T>() : default(T);
         }
 
@@ -273,15 +299,11 @@ namespace Persistence
         /// <typeparam name="T">Result object type.</typeparam>
         /// <param name="query">Query to select.</param>
         /// <param name="resultMap">Result map for query result.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal T GetRecord<T>(string query, string resultMap, object _object)
+        public T GetRecord<T>(string query, string resultMap)
         {
-            if (resultMap == null || !resultMap.Any()) return GetRecord<T>(query, _object);
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(dt);
-            CloseConnection();
+            if (resultMap == null || resultMap.Trim().Length == 0) return GetRecord<T>(query);
+            var dt = Read(query);
             return dt.Rows.Count > 0 ? dt.Rows[0].ToObject<T>(ValidateAndGetResultMap(resultMap, Activator.CreateInstance<T>())) : default(T);
         }
 
@@ -290,14 +312,10 @@ namespace Persistence
         /// </summary>
         /// <typeparam name="T">Result object type.</typeparam>
         /// <param name="query">Query to select.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal List<T> GetRecords<T>(string query, object _object)
+        public List<T> GetRecords<T>(string query)
         {
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(dt);
-            CloseConnection();
+            var dt = Read(query);
             return dt.Rows.Count > 0 ? dt.ToObjectList<T>() : null;
         }
 
@@ -308,14 +326,10 @@ namespace Persistence
         /// <param name="query">Query to select.</param>
         /// <param name="startRecordIndex">The zero-based record number to start with.</param>
         /// <param name="maxRecords">The maximum number of records to retrive.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal List<T> GetRecords<T>(string query, int startRecordIndex, int maxRecords, object _object)
+        public List<T> GetRecords<T>(string query, int startRecordIndex, int maxRecords)
         {
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(startRecordIndex, maxRecords, dt);
-            CloseConnection();
+            var dt = Read(query, startRecordIndex, maxRecords);
             return dt.Rows.Count > 0 ? dt.ToObjectList<T>() : null;
         }
 
@@ -325,15 +339,11 @@ namespace Persistence
         /// <typeparam name="T">Result object type.</typeparam>
         /// <param name="query">Query to select.</param>
         /// <param name="resultMap">Result map for query result.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal List<T> GetRecords<T>(string query, string resultMap, object _object)
+        public List<T> GetRecords<T>(string query, string resultMap)
         {
-            if (resultMap == null || !resultMap.Any()) return GetRecords<T>(query, _object);
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(dt);
-            CloseConnection();
+            if (resultMap == null || resultMap.Trim().Length == 0) return GetRecords<T>(query);
+            var dt = Read(query);
             return dt.Rows.Count > 0 ? dt.ToObjectList<T>(ValidateAndGetResultMap(resultMap, Activator.CreateInstance<T>())) : null;
         }
 
@@ -345,14 +355,10 @@ namespace Persistence
         /// <param name="startRecordIndex">The zero-based record number to start with.</param>
         /// <param name="maxRecords">The maximum number of records to retrive.</param>
         /// <param name="resultMap">Result map for query result.</param>
-        /// <param name="_object">Object value for query.</param>
         /// <returns></returns>
-        internal List<T> GetRecords<T>(string query, int startRecordIndex, int maxRecords, string resultMap, object _object)
+        public List<T> GetRecords<T>(string query, int startRecordIndex, int maxRecords, string resultMap)
         {
-            var olda = new OleDbDataAdapter(CreateCommand(query));
-            var dt = new DataTable();
-            olda.Fill(startRecordIndex, maxRecords, dt);
-            CloseConnection();
+            var dt = Read(query, startRecordIndex, maxRecords);
             return dt.Rows.Count > 0 ? dt.ToObjectList<T>(ValidateAndGetResultMap(resultMap, Activator.CreateInstance<T>())) : null;
         }
 

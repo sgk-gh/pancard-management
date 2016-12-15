@@ -8,15 +8,15 @@ using Persistence;
 public class ApplicationState
 {
     private readonly SqlHandler _handler;
-    public SqlHandler Handler { get; set; }
-    private readonly string connectionString = ConfigurationManager.ConnectionStrings["msAccessConnectionString"].ConnectionString;
+    public SqlHandler Handler { get; set; }    
     public IPanCardRepository PanCardRepository { get { return new PanCardRepository(_handler); } }
     public ApplicationState()
     {
         //
         // TODO: Add constructor logic here
         //
-        Handler = _handler = new SqlHandler(connectionString);
+        var connectionString = ConfigurationManager.ConnectionStrings["msAccessConnectionString"];
+        Handler = _handler = new SqlHandler(connectionString.ProviderName, connectionString.ConnectionString);
     }
     private static HttpApplicationState State
     {

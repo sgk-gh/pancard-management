@@ -35,7 +35,7 @@ namespace Persistence
 
         public IEnumerable<PanCard> GetAllPanCards(string query, string resultMap)
         {
-            return _sqlHandler.GetRecords<PanCard>(query, resultMap, null);
+            return _sqlHandler.GetRecords<PanCard>(query, resultMap);
         }
 
         public int UpdatePanCard(string query, PanCard aPanCard)
@@ -55,7 +55,7 @@ namespace Persistence
 
         public User GetUser(string query, string resultMap)
         {
-            return _sqlHandler.GetRecord<User>(query, resultMap, null);
+            return _sqlHandler.GetRecord<User>(query, resultMap);
         }
 
         public IEnumerable<User> GetAllUsers(string query)
@@ -65,7 +65,7 @@ namespace Persistence
 
         public IEnumerable<User> GetAllUsers(string query, string resultMap)
         {
-            return _sqlHandler.GetRecords<User>(query, resultMap, null);
+            return _sqlHandler.GetRecords<User>(query, resultMap);
         }
 
         public int UpdateUser(string query, User aUser)

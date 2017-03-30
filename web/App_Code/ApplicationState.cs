@@ -10,6 +10,7 @@ public class ApplicationState
     private readonly SqlHandler _handler;
     public SqlHandler Handler { get; set; }    
     public IPanCardRepository PanCardRepository { get { return new PanCardRepository(_handler); } }
+    public IUserRepository UserRepository { get { return new UserRepository(_handler); } }
     public ApplicationState()
     {
         //

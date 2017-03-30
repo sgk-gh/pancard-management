@@ -3,6 +3,7 @@
 <asp:Content ID="cphHead" ContentPlaceHolderID="head" Runat="Server">
     <title>Create User - PAN Details</title>
     <script type="text/javascript" src="Includes/js/jsvalidator.js"></script>
+    <script type="text/javascript" src="Includes/js/common.js"></script>
 </asp:Content>
 <asp:Content ID="cphBody" ContentPlaceHolderID="body" Runat="Server">
     <div class="container">
@@ -23,7 +24,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="control-label col-sm-2" for="txtPassword">Password Name<span style="color: #dd4b39;">*</span> :</label>
+                    <label class="control-label col-sm-2" for="txtPassword">Password<span style="color: #dd4b39;">*</span> :</label>
                     <div class="col-sm-10">
                         <asp:TextBox TextMode="Password" runat="server" type="text" class="form-control" id="txtPassword" placeholder="Enter password"/>
                     </div>
@@ -38,7 +39,7 @@
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
                         <asp:Button ID="btnSubmit" class="btn btn-default" runat="server" onclick="Submit_Click" OnClientClick="return ValidateInputs();" text="Submit"/>                    
-                        <button type="reset" class="btn btn-default" onclick="ClearValidation();">Clear</button>
+                        <button type="reset" class="btn btn-default" onclick="ClearValidation();ClearMessage();">Clear</button>
                     </div>
                 </div>
             </div>
@@ -78,10 +79,7 @@
                 { id: "ctl00_body_txtPassword", type: "text", isRequired: true, reqErrorMessage: "Please Enter Password" }
             ];
             return jsvalidator.validate(elements);
-        }
-        function ClearValidation() {
-            jsvalidator.clear();
-        }
+        }        
     </script>
 </asp:Content>
 

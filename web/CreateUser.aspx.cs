@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Web.UI;
+using System.Globalization;
 using System.Web.UI.WebControls;
 using Model;
 
@@ -19,9 +18,12 @@ public partial class CreateUser : PanCardBasePage
     }
     protected void LoadUserRoles()
     {
-        var query = ConfigurationManager.AppSettings["qryGetUserRoles"].ToString();
-        ddlRole.DataSource = PanCardRepository.GetUserRoles(query).Select(r => r.Role);
-        ddlRole.DataBind();
+        var query = ConfigurationManager.AppSettings["qryGetUserRoles"];
+        var roles = UserRepository.GetUserRoles(query);
+        foreach (var role in roles)
+        {
+            ddlRole.Items.Add(new ListItem(role.Role, role.Id.ToString(CultureInfo.InvariantCulture)));
+        }
     }
     protected void Submit_Click(object sender, EventArgs e)
     {        
@@ -37,8 +39,8 @@ public partial class CreateUser : PanCardBasePage
     }
     private void InsertUserDetails()
     {
-        var query = ConfigurationManager.AppSettings["qryInsertUserDetails"].ToString();
-        var result = PanCardRepository.InsertUser(query, GetUserDetailsFromControls());
+        var query = ConfigurationManager.AppSettings["qryInsertUserDetails"];
+        var result = UserRepository.InsertUser(query, GetUserDetailsFromControls());
         divMessage.Visible = true;
         if (result != 0)
         {
@@ -53,13 +55,13 @@ public partial class CreateUser : PanCardBasePage
     }
     private User GetUserDetailsFromControls()
     {
-        return new User { LoginName = txtLoginName.Text.Trim(), LoginPassword = txtPassword.Text, UserRole = new UserRole { Role = ddlRole.SelectedValue } };
+        return new User { LoginName = txtLoginName.Text.Trim(), LoginPassword = txtPassword.Text, UserRole = new UserRole { Id = Convert.ToInt32(ddlRole.SelectedValue) } };
     }
     private void LoadUserGrid(int pageIndex)
     {
-        var query = ConfigurationManager.AppSettings["qryGetUserDetails"].ToString();
-        var resultMap = ConfigurationManager.AppSettings["rmapGetUserDetails"].ToString();
-        grvUsers.BindGridView(PanCardRepository.GetAllUsers(query, resultMap), PageSize, pageIndex);
+        var query = ConfigurationManager.AppSettings["qryGetAllUserDetails"];
+        var resultMap = ConfigurationManager.AppSettings["rmapGetUserDetails"];
+        grvUsers.BindGridView(UserRepository.GetAllUsers(query, resultMap), PageSize, pageIndex, new List<int>());
     }
     protected void PageIndexChanging(object sender, GridViewPageEventArgs e)
     {
@@ -68,9 +70,19 @@ public partial class CreateUser : PanCardBasePage
     }
     protected void OnRowDeleting(object sender, GridViewDeleteEventArgs e)
     {
-        int index = e.RowIndex;
+        var index = e.RowIndex;
         var row = grvUsers.Rows[index];
-        int id = Convert.ToInt32((row.FindControl("lblId") as Label).Text);
+        var label = row.FindControl("lblId") as Label;
+        if (label != null)
+        {
+            var id = Convert.ToInt32(label.Text);
+            var query = ConfigurationManager.AppSettings["qryDeleteUser"];
+            var conditions = new List<string> { "ID=" + id };
+            query = SqlHandler.AddConditionToQuery(query, conditions);
+            UserRepository.UpdateUser(query, CurrentUser);
+        }
+        LoadUserGrid(0);
         ClientScript.RegisterClientScriptBlock(GetType(), "IsGridViewAction", "var isGridViewAction = true;", true);
+
     }
 }

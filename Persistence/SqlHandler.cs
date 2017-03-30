@@ -210,11 +210,21 @@ namespace Persistence
             return isGetValue ? _object.GetType().GetProperty(bits.Last()).GetValue(_object, null) : _object.GetType().GetProperty(bits.Last());
         }
 
-        static string FormateQueryWithObjectValues(string query, object _object)
+        static string FormateQueryWithObjectValues(string query, object _object, bool isInsert)
         {
             if (_object == null) return query;
-            var propertiesInQueryString = query.Substring(query.ToLower().IndexOf("values(#", StringComparison.Ordinal) + 7, query.ToLower().IndexOf("#)", StringComparison.Ordinal) + 1 - (query.ToLower().IndexOf("values(#", StringComparison.Ordinal) + 7)).Split(',');
-            foreach (var property in propertiesInQueryString)
+            IEnumerable<string> propertiesInQueryString;
+            if (isInsert)
+            {
+                var propertyList = query.Substring(query.ToLower().IndexOf("values(", StringComparison.Ordinal) + 7, query.ToLower().LastIndexOf(")", StringComparison.Ordinal) - (query.ToLower().IndexOf("values(", StringComparison.Ordinal) + 7)).Split(',');
+                propertiesInQueryString = propertyList.Where(property => property.StartsWith("#") && property.EndsWith("#"));
+            }
+            else
+            {
+                var filedAndPropertyList = query.Substring(query.ToLower().IndexOf(" set ", StringComparison.Ordinal) + 5, (query.ToLower().Contains(" where ") ? query.ToLower().IndexOf(" where ", StringComparison.Ordinal) : (query.ToLower().LastIndexOf("#", StringComparison.Ordinal) + 1)) - (query.ToLower().IndexOf(" set ", StringComparison.Ordinal) + 5)).Split(',');
+                propertiesInQueryString = filedAndPropertyList.Select(fieldAndProperty => fieldAndProperty.Split('=')[1]).Where(property => property.StartsWith("#") && property.EndsWith("#"));
+            }
+            foreach (var property in propertiesInQueryString.Select(property => property.Trim()))
             {
                 if (property.Contains('.'))
                 {
@@ -245,9 +255,9 @@ namespace Persistence
             return query;
         }
 
-        int Write(string query, object _object)
+        int Write(string query, object _object, bool isInsert)
         {
-            query = FormateQueryWithObjectValues(query, _object);
+            query = FormateQueryWithObjectValues(query, _object, isInsert);
             var result = CreateCommand(query).ExecuteNonQuery();
             CloseConnection();
             return result;
@@ -255,12 +265,12 @@ namespace Persistence
 
         public int Insert(string query, object _object)
         {
-            return Write(query, _object);
+            return Write(query, _object, true);
         }
 
         public int Update(string query, object _object)
         {
-            return Write(query, _object);
+            return Write(query, _object, false);
         }
 
         DataTable Read(string query)

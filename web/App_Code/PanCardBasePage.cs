@@ -17,10 +17,8 @@ public class PanCardBasePage : Page
         //
     }
     protected int PageSize { get { return Convert.ToInt32(ConfigurationManager.AppSettings["grvPageSize"]); } }
-    protected IPanCardRepository PanCardRepository
-    {
-        get { return ApplicationState.Instance.PanCardRepository; }
-    }
+    protected IPanCardRepository PanCardRepository { get { return ApplicationState.Instance.PanCardRepository; } }
+    protected IUserRepository UserRepository { get { return ApplicationState.Instance.UserRepository; } }
     protected SqlHandler SqlHandler
     {
         get { return ApplicationState.Instance.Handler; }

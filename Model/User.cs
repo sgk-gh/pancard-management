@@ -6,5 +6,6 @@
         public string LoginName { get; set; }
         public string LoginPassword { get; set; }
         public UserRole UserRole { get; set; }
+        public int UpdatedById { get; set; }
     }
 }

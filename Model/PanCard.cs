@@ -11,9 +11,10 @@ namespace Model
         public DateTime PanEntryDate { get; set; }
         public string CouponNumber { get; set; }
         public string FilePath { get; set; }
-        public int CreatedBy { get; set; }
-        public int UpdatedBy { get; set; }
+        public int CreatedById { get; set; }
+        public int UpdatedById { get; set; }
         public DateTime UpdatedAt { get; set; }
         public User User { get; set; }
+        public int ClientId { get; set; }
     }
 }

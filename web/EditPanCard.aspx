@@ -3,6 +3,7 @@
 <asp:Content ID="cphHead" ContentPlaceHolderID="head" Runat="Server">
     <title>Edit Pan Card- PAN Details</title>
     <script type="text/javascript" src="Includes/js/jsvalidator.js"></script>
+    <script type="text/javascript" src="Includes/js/common.js"></script>
     <script type="text/javascript" src="Includes/js/jquery.maskedinput.js"></script>
 </asp:Content>
 <asp:Content ID="cphBody" ContentPlaceHolderID="body" Runat="Server">
@@ -54,19 +55,27 @@
                 <asp:FileUpload runat="server" type="file" class="btn btn-default" id="filePanImage"/>
             </div>
         </div>
-            
+        <% if (CurrentUser.UserRole.Role.ToLower() == "admin")
+        { %>
+        <div class="form-group">
+            <label class="control-label col-sm-4" >Client : </label>
+            <div class="col-sm-8">
+                <asp:DropDownList runat ="server" ID="ddlClient" class="form-control"></asp:DropDownList>
+            </div>
+        </div>
+        <% } %>
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
-                <asp:Button ID="btnSubmit" class="btn btn-default" runat="server" onclick="Update_Click" OnClientClick="return ValidateInputs();" text="Update"/>                    
-                <button type="reset" class="btn btn-default" onclick="ClearValidation();">Clear</button>
+                <asp:Button ID="btnSubmit" class="btn btn-default" runat="server" onclick="Update_Click" OnClientClick="return ValidateInputs();" text="Update"/>
+                <button type="reset" class="btn btn-default" onclick="ClearValidation();ClearMessage();">Reset</button>
             </div>
         </div>
     </div>
     <script type="text/javascript">
         $(function () {
-            $("#body_txtDateOfBirth").datepicker({ dateFormat: "dd/mm/yy" });
+            $("#ctl00_body_txtDateOfBirth").datepicker({ dateFormat: "dd/mm/yy" });
             //$("#body_dtPanEntryDate").datepicker({ dateFormat: "dd/mm/yy" });
-            $("#body_txtDateOfBirth").mask("99/99/9999");
+            $("#ctl00_body_txtDateOfBirth").mask("99/99/9999");
             //$("#body_dtPanEntryDate").mask("99/99/9999");
         });
     </script>

@@ -12,29 +12,35 @@
                 <div class="col-sm-8">
                     <label class="control-label col-sm-4" >Application Number : </label>
                     <div class="col-sm-8">
-                        <asp:TextBox runat="server" type="text" class="form-control" id="txtApplicationNumber" placeholder="Enter application number"/>
+                        <span class="col-sm-11"><asp:TextBox runat="server" type="text" class="form-control" id="txtApplicationNumber" placeholder="Enter application number"/></span>                        
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkApplicationNumber"/></span>
                     </div>               
                     <label class="control-label col-sm-4" >Date of birth : </label>
                     <div class="col-sm-8">
-                        <asp:TextBox runat="server" type="date" class="form-control" id="dtDateOfBirth"  placeholder="Select date of birth"/>
+                        <span class="col-sm-11"><asp:TextBox runat="server" type="date" class="form-control" id="dtDateOfBirth"  placeholder="Select date of birth"/></span>
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkDateOfBirth"/></span>
                     </div>                
                     <label class="control-label col-sm-4" >Customer Name : </label>
                     <div class="col-sm-8">
-                        <asp:TextBox runat="server" type="text" class="form-control" id="txtName" placeholder="Enter customer name"/>
+                        <span class="col-sm-11"><asp:TextBox runat="server" type="text" class="form-control" id="txtName" placeholder="Enter customer name"/></span>
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkName"/></span>
                     </div>
                     <label class="control-label col-sm-4" >Father Name : </label>
                     <div class="col-sm-8">
-                        <asp:TextBox runat="server" type="text" class="form-control" id="txtFatherName" placeholder="Enter father name"/>
+                        <span class="col-sm-11"><asp:TextBox runat="server" type="text" class="form-control" id="txtFatherName" placeholder="Enter father name"/></span>
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkFatherName"/></span>
                     </div>
                     <label class="control-label col-sm-4" >PAN Entry Date : </label>
                     <div class="col-sm-8">
-                        <asp:TextBox runat="server" type="date" class="form-control" id="dtPanEntryDate" placeholder="Select PAN entry date"/>
+                        <span class="col-sm-11"><asp:TextBox runat="server" type="date" class="form-control" id="dtPanEntryDate" placeholder="Select PAN entry date"/></span>
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkPanEntryDate"/></span>
                     </div>
                     <% if (CurrentUser.UserRole.Role.ToLower() == "admin")
                        { %>
                     <label class="control-label col-sm-4" >Client : </label>
                     <div class="col-sm-8">
-                        <asp:DropDownList runat ="server" ID="ddlClient" class="form-control"></asp:DropDownList>
+                        <span class="col-sm-11"><asp:DropDownList runat ="server" ID="ddlClient" class="form-control"></asp:DropDownList></span>
+                        <span class="col-sm-1"><asp:CheckBox runat="server" ID="chkClient"/></span>
                     </div>
                     <% } %>
                 </div>

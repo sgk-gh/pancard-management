@@ -15,18 +15,22 @@ public partial class ChangePassword : PanCardBasePage
     {
         var query = ConfigurationManager.AppSettings["qryChangePassword"].ToString();
         query = SqlHandler.AddConditionToQuery(query, new List<string> { "Id=" + CurrentUser.Id });
-        var result = PanCardRepository.UpdateUser(query, new Model.User { LoginPassword = txtNewPassword.Text });
+        var result = UserRepository.UpdateUser(query, new Model.User { LoginPassword = txtNewPassword.Text });
         divMessage.Visible = true;
         if (result != 0)
         {
             divMessage.Attributes["class"] = "bg-success";
             divMessage.InnerHtml = "Password has been changed!";
-
+            ClearControls();
         }
         else
         {
             divMessage.Attributes["class"] = "bg-warning";
             divMessage.InnerHtml = "Error occurred!";
         }
+    }
+    void ClearControls()
+    {
+        txtNewPassword.Text = txtConfirmPassword.Text = string.Empty;
     }
 }

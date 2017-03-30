@@ -23,11 +23,15 @@ public static class Extensions
         return filename;
     }
 
-    public static void BindGridView(this System.Web.UI.WebControls.GridView gridView, object source, int pageSize, int pageIndex)
+    public static void BindGridView(this System.Web.UI.WebControls.GridView gridView, object source, int pageSize, int pageIndex, IEnumerable<int> columnIndexesToHide)
     {
         gridView.DataSource = source;
         gridView.PageSize = pageSize;
         gridView.PageIndex = pageIndex;
         gridView.DataBind();
+        foreach(var index in columnIndexesToHide)
+        {
+            gridView.Columns[index].Visible = false;
+        }
     }
 }

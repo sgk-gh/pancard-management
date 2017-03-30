@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
-using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Data;
 using Model;
-using Persistence;
 
 public partial class EditPanCard : PanCardBasePage
 {     
@@ -21,9 +18,19 @@ public partial class EditPanCard : PanCardBasePage
             divMessage.Visible = true;
             return;
         }
+        LoadClients();
         SetPanCardDetailsToControls(GetPancardDetailsById());        
     }
-
+    protected void LoadClients()
+    {
+        if (CurrentUser.UserRole.Role.ToLower() != "admin") return;
+        var query = ConfigurationManager.AppSettings["qryGetAllClients"];
+        var clients = UserRepository.GetAllUsers(query);
+        foreach (var client in clients)
+        {
+            ddlClient.Items.Add(new ListItem(client.LoginName, client.Id.ToString(CultureInfo.InvariantCulture)));
+        }
+    }
     protected void Update_Click(object sender, EventArgs e)
     {
         UpdatePanCard();
@@ -31,18 +38,15 @@ public partial class EditPanCard : PanCardBasePage
 
     string GetPanCardIdFromQueryString()
     {
-        if (string.IsNullOrEmpty(Request.QueryString["q"])) return null;
-        return Request.QueryString["q"].Split(':')[1];
+        return string.IsNullOrEmpty(Request.QueryString["q"]) ? null : Request.QueryString["q"].Split(':')[1];
     }
 
     PanCard GetPancardDetailsById()
     {
         var panCardId = GetPanCardIdFromQueryString();
         if (string.IsNullOrEmpty(panCardId)) return null;
-        var query = ConfigurationManager.AppSettings["qryGetAllPanCardDetails"].ToString();
-        var conditions = new List<string> { { "ID=" + panCardId } };
-        query = SqlHandler.AddConditionToQuery(query, conditions);
-        return PanCardRepository.GetPanCard(query);
+        var query = string.Format(ConfigurationManager.AppSettings["qryGetPanCardDetails"], panCardId);
+        return PanCardRepository.GetPanCard(query, ConfigurationManager.AppSettings["rmapGetAllPanCardDetails"]);
     }
 
     void SetPanCardDetailsToControls(PanCard aPancard)
@@ -55,7 +59,7 @@ public partial class EditPanCard : PanCardBasePage
         txtCustomerName.Text = aPancard.CustomerName;
         hlPanImage.Text = aPancard.FilePath;
         hlPanImage.NavigateUrl = "PanCardImages/" + aPancard.FilePath;
-        
+        ddlClient.SelectedValue = CurrentUser.UserRole.Role.ToLower() != "admin" ? CurrentUser.Id.ToString(CultureInfo.InvariantCulture) : aPancard.ClientId.ToString(CultureInfo.InvariantCulture);
     }
 
     PanCard GetPanCardValuesFromControls()
@@ -68,8 +72,8 @@ public partial class EditPanCard : PanCardBasePage
             DateOfBirth = DateTime.ParseExact(txtDateOfBirth.Text.Trim(), "dd/mm/yyyy", CultureInfo.InvariantCulture).Date,
             FatherName = txtFatherName.Text,
             FilePath= GetPanCardImageFile(),
-            UpdatedAt = DateTime.Now,
-            UpdatedBy = CurrentUser.Id
+            //UpdatedAt = DateTime.Now,
+            UpdatedById = CurrentUser.Id
         };
     }
 
@@ -77,10 +81,10 @@ public partial class EditPanCard : PanCardBasePage
     {
         var panCardId = GetPanCardIdFromQueryString();
         if (string.IsNullOrEmpty(panCardId)) return;
-        var query = ConfigurationManager.AppSettings["qryUpdatePanCardDetails"].ToString();
-        var conditions = new List<string> { { "ID=" + panCardId } };
-        query = SqlHandler.AddConditionToQuery(query, conditions);
+        var query = ConfigurationManager.AppSettings["qryUpdatePanCardDetails"];
+        query = SqlHandler.AddConditionToQuery(query, new List<string> {"ID=" + panCardId});
         var panCard = GetPanCardValuesFromControls();
+        panCard.ClientId = CurrentUser.UserRole.Role.ToLower() == "admin" ? Convert.ToInt32(ddlClient.SelectedValue) : GetPancardDetailsById().ClientId;
         var result = PanCardRepository.UpdatePanCard(query, panCard);
         divMessage.Visible = true;
         if (result != 0)
@@ -99,13 +103,12 @@ public partial class EditPanCard : PanCardBasePage
 
     string GetPanCardImageFile()
     {
-        if (!filePanImage.HasFile) return GetPancardDetailsById().FilePath;
-        return SavePanCardImageFile();
+        return !filePanImage.HasFile ? GetPancardDetailsById().FilePath : SavePanCardImageFile();
     }
 
     protected string SavePanCardImageFile()
     {        
         var fileName = txtApplicationNumber.Text + "_" + txtCustomerName.Text.Replace(" ", "_").Replace(".", "_") + "_" + filePanImage.FileName;        
-        return filePanImage.UploadFile(Server.MapPath(ConfigurationManager.AppSettings["panCardImagePath"].ToString()), fileName);        
+        return filePanImage.UploadFile(Server.MapPath(ConfigurationManager.AppSettings["panCardImagePath"]), fileName);
     }
 }

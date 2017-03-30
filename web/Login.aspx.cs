@@ -23,7 +23,7 @@ public partial class Login : PanCardBasePage
             LoginPassword = txtPassword.Text.Trim()
         };
         query = SqlHandler.AddConditionToQuery(query, new List<string> { "LoginName='" + aUser.LoginName + "'", "LoginPassword='" + aUser.LoginPassword + "'" });
-        var user = PanCardRepository.GetUser(query, ConfigurationManager.AppSettings["rmapGetUserDetails"]);
+        var user = UserRepository.GetUser(query, ConfigurationManager.AppSettings["rmapGetUserDetails"]);
         if (user!=null)
         {            
             var jsonUser = new JavaScriptSerializer().Serialize(user);
